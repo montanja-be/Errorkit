@@ -82,9 +82,10 @@ class LaraBug
 
     /**
      * @param Throwable $exception
+     * @param string $fileType
      * @return bool|mixed
      */
-    public function handle(Throwable $exception)
+    public function handle(Throwable $exception, $fileType = 'php', array $customData = [])
     {
         // Drop any capture that re-enters while another capture is still in flight.
         // Without this, an error thrown inside logError() would be caught by
@@ -104,6 +105,22 @@ class LaraBug
 
             if ($this->isSkipException($data['class'])) {
                 return false;
+            }
+
+            if ($fileType == 'javascript') {
+                $data['fullUrl'] = $customData['url'];
+                $data['file'] = $customData['file'];
+                $data['file_type'] = $fileType;
+                $data['error'] = $customData['message'];
+                $data['exception'] = $customData['stack'];
+                $data['line'] = $customData['line'];
+                $data['class'] = null;
+
+                // A JavaScript error's file is a URL in the browser, never a path on
+                // this server, so there is no source to read here. Reading it handed
+                // any anonymous caller an arbitrary file read, and the browser stack
+                // in $data['exception'] is the context that belongs in the report.
+                $data['executor'] = [];
             }
 
             // The same error within the window is counted instead of sent, and

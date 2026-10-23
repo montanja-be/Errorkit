@@ -52,4 +52,5 @@ Alles via `.env`, publiceren van de config is niet nodig.
 Alleen de omgevingen in `environments` (standaard `production`) versturen iets.
 
 Queue-monitoring en de CVE-scan van LaraBug staan standaard uit: projecten.montanja.be ontvangt (nog) alleen errors.
-JavaScript-errors worden niet opgevangen.
+De JavaScript-client van LaraBug zit er nog in (kleinere diff met upstream), maar wordt niet gebruikt: zonder
+`@larabugJavaScriptClient` in een view komt er niets binnen, en projecten negeert JavaScript-meldingen.
