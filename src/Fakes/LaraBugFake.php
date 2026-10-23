@@ -60,7 +60,7 @@ class LaraBugFake extends \LaraBug\LaraBug
         PHPUnit::assertTrue($filtered->count() > 0);
     }
 
-    public function handle(\Throwable $exception, $fileType = 'php', array $customData = [])
+    public function handle(\Throwable $exception)
     {
         $this->exceptions[get_class($exception)][] = $exception;
     }

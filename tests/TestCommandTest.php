@@ -8,34 +8,18 @@ use LaraBug\Tests\Mocks\LaraBugClient;
 class TestCommandTest extends TestCase
 {
     /** @test */
-    public function it_detects_if_the_login_key_is_set()
+    public function it_detects_if_the_website_token_is_set()
     {
         $this->app['config']['larabug.login_key'] = '';
 
-        $this->artisan('larabug:test')
-            ->expectsOutput('✗ [LaraBug] Could not find your login key, set this in your .env')
+        $this->artisan('errorkit:test')
+            ->expectsOutput('✗ [Errorkit] Could not find the website token, set FLOWRISE_TOKEN or EK_KEY in your .env')
             ->assertExitCode(0);
 
         $this->app['config']['larabug.login_key'] = 'test';
 
-        $this->artisan('larabug:test')
-            ->expectsOutput('✓ [Larabug] Found login key')
-            ->assertExitCode(0);
-    }
-
-    /** @test */
-    public function it_detects_if_the_project_key_is_set()
-    {
-        $this->app['config']['larabug.project_key'] = '';
-
-        $this->artisan('larabug:test')
-            ->expectsOutput('✗ [LaraBug] Could not find your project key, set this in your .env')
-            ->assertExitCode(0);
-
-        $this->app['config']['larabug.project_key'] = 'test';
-
-        $this->artisan('larabug:test')
-            ->expectsOutput('✓ [Larabug] Found project key')
+        $this->artisan('errorkit:test')
+            ->expectsOutput('✓ [Errorkit] Found the website token')
             ->assertExitCode(0);
     }
 
@@ -45,22 +29,22 @@ class TestCommandTest extends TestCase
         $this->app['config']['app.env'] = 'production';
         $this->app['config']['larabug.environments'] = [];
 
-        $this->artisan('larabug:test')
-            ->expectsOutput('✗ [LaraBug] Environment (production) not allowed to send errors to LaraBug, set this in your config')
+        $this->artisan('errorkit:test')
+            ->expectsOutput('✗ [Errorkit] Environment (production) not allowed to send errors, set this in config/larabug.php')
             ->assertExitCode(0);
 
         $this->app['config']['larabug.environments'] = ['production'];
 
-        $this->artisan('larabug:test')
-            ->expectsOutput('✓ [Larabug] Correct environment found (' . config('app.env') . ')')
+        $this->artisan('errorkit:test')
+            ->expectsOutput('✓ [Errorkit] Correct environment found (' . config('app.env') . ')')
             ->assertExitCode(0);
     }
 
     /** @test */
-    public function it_detects_that_it_fails_to_send_to_larabug()
+    public function it_detects_that_it_fails_to_send()
     {
-        $this->artisan('larabug:test')
-            ->expectsOutput('✗ [LaraBug] Failed to send exception to LaraBug')
+        $this->artisan('errorkit:test')
+            ->expectsOutput('✗ [Errorkit] Failed to send the exception (wrong environment, a duplicate within 60 seconds, rate limited or the server did not accept it)')
             ->assertExitCode(0);
 
         $this->app['config']['larabug.environments'] = [
@@ -71,8 +55,8 @@ class TestCommandTest extends TestCase
             'project_key'
         ));
 
-        $this->artisan('larabug:test')
-            ->expectsOutput('✓ [LaraBug] Sent exception to LaraBug with ID: '.LaraBugClient::RESPONSE_ID)
+        $this->artisan('errorkit:test')
+            ->expectsOutput('✓ [Errorkit] Sent exception with ID: '.LaraBugClient::RESPONSE_ID)
             ->assertExitCode(0);
 
         $this->assertEquals(LaraBugClient::RESPONSE_ID, $this->app['larabug']->getLastExceptionId());

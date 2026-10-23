@@ -6,9 +6,9 @@ return [
     | DSN (Data Source Name)
     |--------------------------------------------------------------------------
     |
-    | You can use a single DSN string to configure LaraBug instead of
+    | You can use a single DSN string to configure Errorkit instead of
     | individual keys. Format: https://login-key:project-key@host/path
-    | Example: https://abc123:def456@www.larabug.com/api/log
+    | Example: https://abc123:def456@projecten.montanja.be/api/log
     |
     | If DSN is set, it will take precedence over individual keys below.
     |
@@ -20,22 +20,23 @@ return [
     | Login key
     |--------------------------------------------------------------------------
     |
-    | This is your authorization key which you get from your profile.
-    | Retrieve your key from https://www.larabug.com
+    | The token of the website on projecten.montanja.be. Every Munia site
+    | already has it as FLOWRISE_TOKEN for its heartbeat, so by default
+    | there is nothing to configure.
     |
     */
-    'login_key' => env('EK_KEY', ''),
+    'login_key' => env('EK_KEY', env('FLOWRISE_TOKEN', '')),
 
     /*
     |--------------------------------------------------------------------------
     | Project key
     |--------------------------------------------------------------------------
     |
-    | This is your project key which you receive when creating a project
-    | Retrieve your key from https://www.larabug.com
+    | Sent along with every report. projecten.montanja.be identifies the site
+    | by its token alone, so this only labels the reports.
     |
     */
-    'project_key' => env('EK_PROJECT_KEY', ''),
+    'project_key' => env('EK_PROJECT_KEY', 'munia'),
 
     /*
     |--------------------------------------------------------------------------
@@ -89,10 +90,47 @@ return [
     | Prevent duplicates
     |--------------------------------------------------------------------------
     |
-    | Set the sleep time between duplicate exceptions. This value is in seconds, default: 60 seconds (1 minute)
+    | The same error (same fingerprint) is sent at most once per this many
+    | seconds. Repeats in between are counted, and that count is sent along
+    | with the next report of the error. 0 sends every occurrence.
     |
     */
-    'sleep' => 60,
+    'sleep' => env('EK_SLEEP', 60),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Rate limiting
+    |--------------------------------------------------------------------------
+    |
+    | At most this many reports per minute leave the site, whatever the
+    | errors. Reports over the limit are dropped and only counted; the count
+    | goes along with the next report that does go out.
+    |
+    | When the server answers 429 or 5xx, or does not answer at all, the site
+    | stops sending for the Retry-After the server gave, or `backoff` seconds.
+    |
+    */
+    'rate_limit' => [
+        'per_minute' => env('EK_RATE_LIMIT', 10),
+    ],
+
+    'backoff' => env('EK_BACKOFF', 60),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sending
+    |--------------------------------------------------------------------------
+    |
+    | Deferred: during a web request reports are sent after the response has
+    | gone out, so a visitor never waits on the server. Console commands and
+    | queue workers always send right away.
+    |
+    */
+    'deferred' => env('EK_DEFERRED', true),
+
+    'connect_timeout' => env('EK_CONNECT_TIMEOUT', 2),
+
+    'timeout' => env('EK_TIMEOUT', 5),
 
     /*
     |--------------------------------------------------------------------------
@@ -125,7 +163,12 @@ return [
         '*cvv*',
         '*iban*',
         '*name*',
-        '*email*'
+        '*email*',
+        '*secret*',
+        '*cookie*',
+        '*session*',
+        '*phone*',
+        '*address*',
     ],
 
     /*
@@ -135,7 +178,7 @@ return [
     |
     |
     */
-    // 'release' => trim(exec('git --git-dir ' . base_path('.git') . ' log --pretty="%h" -n1 HEAD')),
+    'release' => env('EK_RELEASE'),
 
     /*
     |--------------------------------------------------------------------------
@@ -152,7 +195,7 @@ return [
     | Verify SSL setting
     |--------------------------------------------------------------------------
     |
-    | Enables / disables the SSL verification when sending exceptions to LaraBug
+    | Enables / disables the SSL verification when sending exceptions
     | Never turn SSL verification off on production instances
     |
     */
@@ -169,10 +212,10 @@ return [
     'jobs' => [
         /*
         | Enable or disable queue job tracking
-        | Set to false via EK_TRACK_JOBS=false to completely disable
-        | Default: true (tracking enabled)
+        | Off by default: projecten.montanja.be only receives errors. A failed
+        | job is still reported, through the exception handler.
         */
-        'track_jobs' => env('EK_TRACK_JOBS', true),
+        'track_jobs' => env('EK_TRACK_JOBS', false),
 
         /*
         |--------------------------------------------------------------------------
@@ -351,7 +394,8 @@ return [
     */
     'cve' => [
         /*
-        | Master toggle. On by default — set EK_CVE_ENABLED=false to opt out.
+        | Master toggle. Off by default: projecten.montanja.be does not receive
+        | scans (yet).
         |
         | Turning this on alone does not start scanning: the project also has to
         | have CVE scanning enabled in LaraBug. Until it does, the server answers
@@ -361,7 +405,7 @@ return [
         | Only package names, versions and a hash of composer.lock ever leave the
         | app. No source, no paths, no env values.
         */
-        'enabled' => env('EK_CVE_ENABLED', true),
+        'enabled' => env('EK_CVE_ENABLED', false),
 
         /*
         | How scans get triggered:

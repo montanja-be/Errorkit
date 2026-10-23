@@ -23,6 +23,8 @@ class LaraBugTest extends TestCase
     {
         parent::setUp();
 
+        \LaraBug\Support\Throttle::reset();
+
         $this->laraBug = new LaraBug($this->client = new LaraBugClient(
             'login_key',
             'project_key'
@@ -46,7 +48,7 @@ class LaraBugTest extends TestCase
             ]),
         ]));
 
-        $this->assertInstanceOf(get_class(new \stdClass()), $this->laraBug->handle(new Exception('is_will_not_crash_if_larabug_returns_error_bad_response_exception')));
+        $this->assertFalse($this->laraBug->handle(new Exception('is_will_not_crash_if_larabug_returns_error_bad_response_exception')));
     }
 
     /** @test */
@@ -100,38 +102,6 @@ class LaraBugTest extends TestCase
     }
 
     /** @test */
-    public function it_will_return_false_for_sleeping_cache_exception_if_disabled()
-    {
-        $this->app['config']['larabug.sleep'] = 0;
-
-        $this->assertFalse($this->laraBug->isSleepingException([]));
-    }
-
-    /** @test */
-    public function it_can_check_if_is_a_sleeping_cache_exception()
-    {
-        $data = ['host' => 'localhost', 'method' => 'GET', 'exception' => 'it_can_check_if_is_a_sleeping_cache_exception', 'line' => 2, 'file' => '/tmp/Larabug/tests/LaraBugTest.php', 'class' => 'Exception'];
-
-        Carbon::setTestNow('2019-10-12 13:30:00');
-
-        $this->assertFalse($this->laraBug->isSleepingException($data));
-
-        Carbon::setTestNow('2019-10-12 13:30:00');
-
-        $this->laraBug->addExceptionToSleep($data);
-
-        $this->assertTrue($this->laraBug->isSleepingException($data));
-
-        Carbon::setTestNow('2019-10-12 13:30:59');
-
-        $this->assertTrue($this->laraBug->isSleepingException($data));
-
-        Carbon::setTestNow('2019-10-12 13:31:01');
-
-        $this->assertFalse($this->laraBug->isSleepingException($data));
-    }
-
-    /** @test */
     public function it_can_get_formatted_exception_data()
     {
         $data = $this->laraBug->getExceptionData(new Exception(
@@ -139,12 +109,14 @@ class LaraBugTest extends TestCase
         ));
 
         $this->assertSame('testing', $data['environment']);
-        $this->assertSame('localhost', $data['host']);
-        $this->assertSame('GET', $data['method']);
-        $this->assertSame('http://localhost', $data['fullUrl']);
+        // Tests run in the console, where there is no request to describe.
+        $this->assertSame(gethostname(), $data['host']);
+        $this->assertSame('CLI', $data['method']);
+        $this->assertNotEmpty($data['fullUrl']);
         $this->assertSame('it_can_get_formatted_exception_data', $data['exception']);
 
-        $this->assertCount(13, $data);
+        $this->assertCount(14, $data);
+        $this->assertSame(40, strlen($data['fingerprint']));
     }
 
     /** @test */
@@ -182,5 +154,111 @@ class LaraBugTest extends TestCase
         $this->laraBug->handle(new Exception('it_can_report_an_exception_to_larabug'));
 
         $this->client->assertRequestsSent(1);
+    }
+
+    /** @test */
+    public function it_bundles_duplicates_and_sends_the_count_with_the_next_report()
+    {
+        $this->app['config']['larabug.environments'] = ['testing'];
+        $this->app['config']['larabug.sleep'] = 60;
+
+        Carbon::setTestNow('2026-10-23 10:00:00');
+
+        for ($i = 1; $i <= 3; $i++) {
+            $this->laraBug->handle($this->exceptionFromTheSameLine('Order '.$i.' not found'));
+        }
+
+        $this->client->assertRequestsSent(1);
+        $this->assertSame(1, $this->client->getRequests()[0]['exception']['occurrences']);
+
+        Carbon::setTestNow('2026-10-23 10:01:01');
+
+        $this->laraBug->handle($this->exceptionFromTheSameLine('Order 4 not found'));
+
+        $this->client->assertRequestsSent(2);
+        $this->assertSame(3, $this->client->getRequests()[1]['exception']['occurrences']);
+
+        Carbon::setTestNow();
+    }
+
+    /** @test */
+    public function it_drops_reports_over_the_rate_limit_and_reports_how_many()
+    {
+        $this->app['config']['larabug.environments'] = ['testing'];
+        $this->app['config']['larabug.sleep'] = 0;
+        $this->app['config']['larabug.rate_limit.per_minute'] = 2;
+
+        for ($i = 1; $i <= 5; $i++) {
+            $this->laraBug->handle(new Exception('rate limited'));
+        }
+
+        $this->client->assertRequestsSent(2);
+
+        $this->app['config']['larabug.rate_limit.per_minute'] = 0;
+
+        $this->laraBug->handle(new Exception('rate limited'));
+
+        $this->client->assertRequestsSent(3);
+        $this->assertSame(3, $this->client->getRequests()[2]['exception']['dropped']);
+    }
+
+    /** @test */
+    public function it_backs_off_when_the_server_asks_for_it()
+    {
+        $this->app['config']['larabug.environments'] = ['testing'];
+        $this->app['config']['larabug.sleep'] = 0;
+
+        $guzzle = new \GuzzleHttp\Handler\MockHandler([
+            new Response(429, ['Retry-After' => '120'], '{}'),
+            new Response(200, [], '{"id":"after"}'),
+        ]);
+
+        $this->laraBug = new LaraBug($client = new \LaraBug\Http\Client('login_key', 'project_key'));
+        $client->setGuzzleHttpClient(new Client(['handler' => \GuzzleHttp\HandlerStack::create($guzzle)]));
+
+        $this->assertFalse($this->laraBug->handle(new Exception('first')));
+        $this->assertFalse($this->laraBug->handle(new Exception('during the back off')));
+        $this->assertCount(1, $guzzle);
+
+        Carbon::setTestNow(now()->addSeconds(121));
+
+        $response = $this->laraBug->handle(new Exception('after the back off'));
+
+        $this->assertSame('after', $response->id);
+
+        Carbon::setTestNow();
+    }
+
+    /** @test */
+    public function it_normalises_messages_for_the_fingerprint()
+    {
+        $this->assertSame(
+            \LaraBug\Support\Fingerprint::make('E', base_path('app/A.php'), 10, 'No query results for model [Order] 42'),
+            \LaraBug\Support\Fingerprint::make('E', base_path('app/A.php'), 10, 'No query results for model [Order] 43')
+        );
+
+        $this->assertNotSame(
+            \LaraBug\Support\Fingerprint::make('E', base_path('app/A.php'), 10, 'Something'),
+            \LaraBug\Support\Fingerprint::make('E', base_path('app/A.php'), 11, 'Something')
+        );
+
+        $this->assertSame('app/A.php', \LaraBug\Support\Fingerprint::relativeFile('/home/forge/site/releases/20261023/app/A.php'));
+    }
+
+    /** @test */
+    public function it_only_sends_who_the_user_is()
+    {
+        $this->app['config']['larabug.environments'] = ['testing'];
+
+        $this->actingAs((new \Illuminate\Foundation\Auth\User())->forceFill(['id' => 7, 'email' => 'someone@example.com']));
+
+        $this->laraBug->handle(new Exception('user'));
+
+        $this->assertSame(['id' => 7, 'type' => 'User', 'guard' => 'web'], $this->client->getRequests()[0]['user']);
+    }
+
+    private function exceptionFromTheSameLine(string $message): Exception
+    {
+        return new Exception($message);
     }
 }

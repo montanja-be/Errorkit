@@ -40,13 +40,14 @@ class Client
                     'Authorization' => 'Bearer '.$this->login,
                     'Content-Type' => 'application/json',
                     'Accept' => 'application/json',
-                    'User-Agent' => 'LaraBug-Package'
+                    'User-Agent' => 'Errorkit-Package'
                 ],
                 'json' => array_merge([
                     'project' => $this->project,
                     'additional' => [],
                 ], $exception),
                 'verify' => config('larabug.verify_ssl'),
+                'http_errors' => false,
                 'allow_redirects' => [
                     'max' => 5,
                     'strict' => true,  // Preserve POST method on redirects
@@ -68,8 +69,11 @@ class Client
     public function getGuzzleHttpClient()
     {
         if (! isset($this->client)) {
+            // Short on purpose: a report is sent from the request or worker that
+            // failed, and a slow server must not make that one slower still.
             $this->client = new \GuzzleHttp\Client([
-                'timeout' => 15,
+                'connect_timeout' => (float) config('larabug.connect_timeout', 2),
+                'timeout' => (float) config('larabug.timeout', 5),
             ]);
         }
 

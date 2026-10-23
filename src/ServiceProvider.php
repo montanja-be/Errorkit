@@ -8,8 +8,6 @@ use LaraBug\Commands\ScanCommand;
 use LaraBug\Commands\TestCommand;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Debug\ExceptionHandler;
-use Illuminate\Support\Facades\Blade;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 use Throwable;
 
@@ -27,9 +25,6 @@ class ServiceProvider extends BaseServiceProvider
             ]);
         }
 
-        // Register views
-        $this->app['view']->addNamespace('larabug', __DIR__ . '/../resources/views');
-
         // Register facade
         if (class_exists(\Illuminate\Foundation\AliasLoader::class)) {
             $loader = \Illuminate\Foundation\AliasLoader::getInstance();
@@ -41,12 +36,6 @@ class ServiceProvider extends BaseServiceProvider
             TestCommand::class,
             ScanCommand::class,
         ]);
-
-        // Map any routes
-        $this->mapLaraBugApiRoutes();
-
-        // Create an alias to the larabug-js-client.blade.php include
-        Blade::include('larabug::larabug-js-client', 'larabugJavaScriptClient');
 
         // Report exceptions without every application having to wire LaraBug
         // into its own exception handler, which is silently forgotten often
@@ -196,13 +185,15 @@ class ServiceProvider extends BaseServiceProvider
         });
 
         if ($this->app['log'] instanceof \Illuminate\Log\LogManager) {
-            $this->app['log']->extend('larabug', function ($app, $config) {
-                $handler = new \LaraBug\Logger\LaraBugHandler(
-                    $app['larabug']
-                );
+            foreach (['larabug', 'errorkit'] as $driver) {
+                $this->app['log']->extend($driver, function ($app, $config) use ($driver) {
+                    $handler = new \LaraBug\Logger\LaraBugHandler(
+                        $app['larabug']
+                    );
 
-                return new Logger('larabug', [$handler]);
-            });
+                    return new Logger($driver, [$handler]);
+                });
+            }
         }
 
         // Register queue monitoring singleton (always, will be lazy loaded)
@@ -217,19 +208,5 @@ class ServiceProvider extends BaseServiceProvider
         if (method_exists(\Illuminate\Foundation\Bus\PendingDispatch::class, 'macro')) {
             DispatchMacros::register();
         }
-    }
-
-    protected function mapLaraBugApiRoutes()
-    {
-        Route::group(
-            [
-                'namespace' => '\LaraBug\Http\Controllers',
-                'prefix' => 'larabug-api',
-                'middleware' => 'throttle:60,1'
-            ],
-            function ($router) {
-                require __DIR__ . '/../routes/api.php';
-            }
-        );
     }
 }

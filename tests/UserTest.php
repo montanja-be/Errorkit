@@ -34,7 +34,7 @@ class UserTest extends TestCase
             'email' => 'email',
         ]));
 
-        $this->assertSame(['id' => 1, 'username' => 'username', 'password' => 'password', 'email' => 'email'], $this->laraBug->getUser());
+        $this->assertSame(['id' => 1, 'type' => 'CustomerUser', 'guard' => 'web'], $this->laraBug->getUser());
     }
 
     /** @test */
