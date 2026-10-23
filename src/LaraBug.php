@@ -479,8 +479,8 @@ class LaraBug
     }
 
     /**
-     * Only who it was, never their details: the server needs to tell users
-     * apart, not to know their name or e-mail address.
+     * Who it was: the id and the e-mail address, so the user can be contacted
+     * about the error. No other details of the user are sent.
      *
      * @return array|null
      */
@@ -504,6 +504,7 @@ class LaraBug
 
             return [
                 'id' => $user->getAuthIdentifier(),
+                'email' => $user->email ?? null,
                 'type' => class_basename($user),
                 'guard' => $guard,
             ];

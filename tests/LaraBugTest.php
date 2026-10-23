@@ -254,7 +254,7 @@ class LaraBugTest extends TestCase
 
         $this->laraBug->handle(new Exception('user'));
 
-        $this->assertSame(['id' => 7, 'type' => 'User', 'guard' => 'web'], $this->client->getRequests()[0]['user']);
+        $this->assertSame(['id' => 7, 'email' => 'someone@example.com', 'type' => 'User', 'guard' => 'web'], $this->client->getRequests()[0]['user']);
     }
 
     private function exceptionFromTheSameLine(string $message): Exception

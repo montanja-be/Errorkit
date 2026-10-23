@@ -29,7 +29,7 @@ php artisan errorkit:test
   request een time-out.
 - **Na de response**: tijdens een webrequest wordt pas verstuurd nadat de bezoeker zijn pagina heeft. Commando's en
   queue workers versturen meteen. Time-outs zijn kort (2 s verbinden, 5 s totaal).
-- **Privacy**: van de gebruiker gaan alleen id, modeltype en guard mee; van cookies alleen de namen. Parameters,
+- **Privacy**: van de gebruiker gaan alleen id, e-mailadres, modeltype en guard mee; van cookies alleen de namen. Parameters,
   headers en sessiewaarden worden gefilterd op de `blacklist` in de config.
 
 Valt de cache weg (bv. een databasecache terwijl de database plat ligt), dan gelden bundelen en rate limiting per
