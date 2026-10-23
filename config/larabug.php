@@ -13,7 +13,7 @@ return [
     | If DSN is set, it will take precedence over individual keys below.
     |
     */
-    'dsn' => env('LB_DSN'),
+    'dsn' => env('EK_DSN'),
 
     /*
     |--------------------------------------------------------------------------
@@ -24,7 +24,7 @@ return [
     | Retrieve your key from https://www.larabug.com
     |
     */
-    'login_key' => env('LB_KEY', ''),
+    'login_key' => env('EK_KEY', ''),
 
     /*
     |--------------------------------------------------------------------------
@@ -35,7 +35,7 @@ return [
     | Retrieve your key from https://www.larabug.com
     |
     */
-    'project_key' => env('LB_PROJECT_KEY', ''),
+    'project_key' => env('EK_PROJECT_KEY', ''),
 
     /*
     |--------------------------------------------------------------------------
@@ -47,7 +47,7 @@ return [
     | LaraBug::handle() yourself and decide per exception whether to send it.
     |
     */
-    'register_exception_handler' => env('LB_REGISTER_EXCEPTION_HANDLER', true),
+    'register_exception_handler' => env('EK_REGISTER_EXCEPTION_HANDLER', true),
 
     /*
     |--------------------------------------------------------------------------
@@ -145,7 +145,7 @@ return [
     | This setting allows you to change the server.
     |
     */
-    'server' => env('LB_SERVER', 'https://www.larabug.com/api/log'),
+    'server' => env('EK_SERVER', 'https://projecten.montanja.be/api/log'),
 
     /*
     |--------------------------------------------------------------------------
@@ -156,7 +156,7 @@ return [
     | Never turn SSL verification off on production instances
     |
     */
-    'verify_ssl' => env('LB_VERIFY_SSL', true),
+    'verify_ssl' => env('EK_VERIFY_SSL', true),
 
     /*
     |--------------------------------------------------------------------------
@@ -169,10 +169,10 @@ return [
     'jobs' => [
         /*
         | Enable or disable queue job tracking
-        | Set to false via LB_TRACK_JOBS=false to completely disable
+        | Set to false via EK_TRACK_JOBS=false to completely disable
         | Default: true (tracking enabled)
         */
-        'track_jobs' => env('LB_TRACK_JOBS', true),
+        'track_jobs' => env('EK_TRACK_JOBS', true),
 
         /*
         |--------------------------------------------------------------------------
@@ -193,14 +193,14 @@ return [
         | When dispatch rate exceeds this, batching activates automatically
         | Default: 10 jobs/minute
         */
-        'auto_batch_threshold' => env('LB_AUTO_BATCH_THRESHOLD', 10),
+        'auto_batch_threshold' => env('EK_AUTO_BATCH_THRESHOLD', 10),
 
         /*
         | Jobs per minute threshold to disable batching
         | When rate drops below this (and cooldown passes), batching deactivates
         | Default: 5 jobs/minute
         */
-        'auto_batch_disable_threshold' => env('LB_AUTO_BATCH_DISABLE', 5),
+        'auto_batch_disable_threshold' => env('EK_AUTO_BATCH_DISABLE', 5),
 
         /*
         | Cooldown period (in minutes) before disabling batching
@@ -208,7 +208,7 @@ return [
         | Prevents rapid enable/disable cycling
         | Default: 5 minutes
         */
-        'auto_batch_cooldown' => env('LB_AUTO_BATCH_COOLDOWN', 5),
+        'auto_batch_cooldown' => env('EK_AUTO_BATCH_COOLDOWN', 5),
 
         /*
         | Number of events to buffer before auto-flushing to API
@@ -216,7 +216,7 @@ return [
         | Recommended: 50-100 for most applications
         | Default: 50
         */
-        'batch_size' => env('LB_BATCH_SIZE', 50),
+        'batch_size' => env('EK_BATCH_SIZE', 50),
 
         /*
         | Auto-flush interval in seconds
@@ -224,14 +224,14 @@ return [
         | Ensures events aren't held indefinitely in low-traffic scenarios
         | Default: 30 seconds
         */
-        'flush_interval' => env('LB_FLUSH_INTERVAL', 30),
+        'flush_interval' => env('EK_FLUSH_INTERVAL', 30),
 
         /*
         | Maximum retry attempts for failed API calls
         | Each retry uses exponential backoff (100ms, 200ms, 300ms)
         | Default: 3 retries
         */
-        'max_retries' => env('LB_MAX_RETRIES', 3),
+        'max_retries' => env('EK_MAX_RETRIES', 3),
 
         /*
         |--------------------------------------------------------------------------
@@ -249,7 +249,7 @@ return [
         | Useful for debugging stuck jobs but doubles API calls
         | Default: false (most users don't need this)
         */
-        'track_processing' => env('LB_TRACK_PROCESSING', false),
+        'track_processing' => env('EK_TRACK_PROCESSING', false),
 
         /*
         | Track when jobs COMPLETE successfully
@@ -257,14 +257,14 @@ return [
         | Consider using sample_rate instead of disabling completely
         | Default: true
         */
-        'track_completed' => env('LB_TRACK_COMPLETED', true),
+        'track_completed' => env('EK_TRACK_COMPLETED', true),
 
         /*
         | Track when jobs FAIL
         | HIGHLY RECOMMENDED - this is the main value of LaraBug
         | Default: true (always track failures)
         */
-        'track_failed' => env('LB_TRACK_FAILED', true),
+        'track_failed' => env('EK_TRACK_FAILED', true),
 
         /*
         |--------------------------------------------------------------------------
@@ -286,7 +286,7 @@ return [
         | 
         | Note: Failures are ALWAYS tracked at 100% regardless of this setting
         */
-        'sample_rate' => env('LB_SAMPLE_RATE', 1.0),
+        'sample_rate' => env('EK_SAMPLE_RATE', 1.0),
 
         /*
         |--------------------------------------------------------------------------
@@ -297,16 +297,16 @@ return [
         /*
         | Only track jobs on specific queues (empty array = all queues)
         | Example: ['high-priority', 'emails']
-        | Environment: LB_ONLY_QUEUES=high-priority,emails
+        | Environment: EK_ONLY_QUEUES=high-priority,emails
         */
-        'only_queues' => array_filter(explode(',', env('LB_ONLY_QUEUES', ''))),
+        'only_queues' => array_filter(explode(',', env('EK_ONLY_QUEUES', ''))),
 
         /*
         | Ignore jobs on specific queues
         | Example: ['low-priority', 'notifications']
-        | Environment: LB_IGNORE_QUEUES=low-priority,notifications
+        | Environment: EK_IGNORE_QUEUES=low-priority,notifications
         */
-        'ignore_queues' => array_filter(explode(',', env('LB_IGNORE_QUEUES', ''))),
+        'ignore_queues' => array_filter(explode(',', env('EK_IGNORE_QUEUES', ''))),
 
         /*
         | Ignore specific job classes
@@ -323,19 +323,19 @@ return [
         /*
         | Maximum payload size in bytes (payloads larger will be truncated)
         */
-        'max_payload_size' => env('LB_JOBS_MAX_PAYLOAD_SIZE', 10000),
+        'max_payload_size' => env('EK_JOBS_MAX_PAYLOAD_SIZE', 10000),
 
         /*
         | Report SDK errors back to LaraBug (useful for debugging)
         | Default: false
         */
-        'report_sdk_errors' => env('LB_REPORT_SDK_ERRORS', false),
+        'report_sdk_errors' => env('EK_REPORT_SDK_ERRORS', false),
 
         /*
         | Report buffer flush errors back to LaraBug (useful for debugging)
         | Default: false
         */
-        'report_buffer_errors' => env('LB_REPORT_BUFFER_ERRORS', false),
+        'report_buffer_errors' => env('EK_REPORT_BUFFER_ERRORS', false),
     ],
 
     /*
@@ -351,7 +351,7 @@ return [
     */
     'cve' => [
         /*
-        | Master toggle. On by default — set LB_CVE_ENABLED=false to opt out.
+        | Master toggle. On by default — set EK_CVE_ENABLED=false to opt out.
         |
         | Turning this on alone does not start scanning: the project also has to
         | have CVE scanning enabled in LaraBug. Until it does, the server answers
@@ -361,7 +361,7 @@ return [
         | Only package names, versions and a hash of composer.lock ever leave the
         | app. No source, no paths, no env values.
         */
-        'enabled' => env('LB_CVE_ENABLED', true),
+        'enabled' => env('EK_CVE_ENABLED', true),
 
         /*
         | How scans get triggered:
@@ -372,35 +372,35 @@ return [
         |                acts as a safety net for apps with no inbound traffic.
         | Default: both.
         */
-        'trigger' => env('LB_CVE_TRIGGER', 'both'),
+        'trigger' => env('EK_CVE_TRIGGER', 'both'),
 
         /*
         | Scheduler frequency. 'daily' | 'hourly' | 'twice-daily', or a custom
         | cron expression. Only used when trigger includes 'schedule' or 'both'.
         */
-        'schedule' => env('LB_CVE_SCHEDULE', 'daily'),
+        'schedule' => env('EK_CVE_SCHEDULE', 'daily'),
 
         /*
         | Hours to wait before re-scanning an unchanged composer.lock when
         | triggered by request piggyback. Hash-change is detected immediately
         | regardless; this only applies to the heartbeat for stale stacks.
         */
-        'request_throttle_hours' => env('LB_CVE_REQUEST_THROTTLE_HOURS', 24),
+        'request_throttle_hours' => env('EK_CVE_REQUEST_THROTTLE_HOURS', 24),
 
         /*
         | Include `packages-dev` from composer.lock in the scan.
         | Off by default — production deps are what matters in deployed apps.
         */
-        'include_dev' => env('LB_CVE_INCLUDE_DEV', false),
+        'include_dev' => env('EK_CVE_INCLUDE_DEV', false),
 
         /*
         | Path to composer.lock. Defaults to base_path('composer.lock').
         */
-        'lock_path' => env('LB_CVE_LOCK_PATH'),
+        'lock_path' => env('EK_CVE_LOCK_PATH'),
 
         /*
         | Environment label sent alongside the scan (matches `app.env` by default).
         */
-        'environment' => env('LB_CVE_ENVIRONMENT'),
+        'environment' => env('EK_CVE_ENVIRONMENT'),
     ],
 ];
